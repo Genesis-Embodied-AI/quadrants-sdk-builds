@@ -115,12 +115,18 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Write-Host "Using LLVM_TAG=$env:LLVM_TAG"
 
-          $vsPath = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-          cmd /c "`"$vsPath`" && set" | ForEach-Object {
+          # Use vcvarsall to set up MSVC x64 environment
+          $vcvarsall = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat"
+          cmd /c "`"$vcvarsall`" x64 && set" | ForEach-Object {
               if ($_ -match '^([^=]+)=(.*)') {
                   [Environment]::SetEnvironmentVariable($matches[1], $matches[2])
               }
           }
+
+          # Remove MSYS2/MinGW from PATH so CMake Ninja finds MSVC cl.exe
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'msys|mingw' }) -join ';'
+
+          Write-Host "CC = $(where.exe cl 2>&1 | Select-Object -First 1)"
 
           New-Item -ItemType Directory -Force -Path llvm-project | Out-Null
           Set-Location llvm-project
