@@ -130,6 +130,8 @@ jobs:
           git checkout --detach FETCH_HEAD
 
           cmake -S llvm -B build -G Ninja `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_INSTALL_PREFIX="$env:CMAKE_INSTALL_PREFIX" `
             -DLLVM_ENABLE_PROJECTS="clang" `
