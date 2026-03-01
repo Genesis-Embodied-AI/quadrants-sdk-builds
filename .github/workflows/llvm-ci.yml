@@ -1,7 +1,7 @@
 name: Build LLVM (matrix)
 
 env:
-  DEFAULT_LLVM_VERSION: '15.0.7'
+  DEFAULT_LLVM_VERSION: '22.1.0'
 
 on:
   workflow_dispatch:
@@ -87,13 +87,20 @@ jobs:
           cmake -S llvm -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}" \
-            -DLLVM_ENABLE_PROJECTS="clang;lld" \
+            -DLLVM_ENABLE_PROJECTS="clang" \
             -DLLVM_ENABLE_RTTI:BOOL=ON \
             -DLLVM_ENABLE_LIBXML2=OFF \
             -DLLVM_ENABLE_ZLIB=OFF \
             -DLLVM_ENABLE_ZSTD=OFF \
             -DLLVM_TARGETS_TO_BUILD="host;NVPTX;AMDGPU" \
-            -DLLVM_ENABLE_TERMINFO=OFF
+            -DLLVM_ENABLE_TERMINFO=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            -DLLVM_INCLUDE_DOCS=OFF \
+            -DCLANG_INCLUDE_TESTS=OFF \
+            -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
+            -DCLANG_ENABLE_ARCMT=OFF
 
           cmake --build build --target all -- -k 0
           cmake --build build --target install
@@ -108,12 +115,22 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Write-Host "Using LLVM_TAG=$env:LLVM_TAG"
 
-          $vsPath = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-          cmd /c "`"$vsPath`" && set" | ForEach-Object {
+          # Find VS installation and set up MSVC x64 environment
+          $vsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsInstall = & $vsWhere -latest -property installationPath
+          Write-Host "VS install path: $vsInstall"
+          $vcvarsall = Join-Path $vsInstall "VC\Auxiliary\Build\vcvarsall.bat"
+          cmd /c "`"$vcvarsall`" x64 && set" | ForEach-Object {
               if ($_ -match '^([^=]+)=(.*)') {
                   [Environment]::SetEnvironmentVariable($matches[1], $matches[2])
               }
           }
+
+          # Remove MSYS2/MinGW from PATH so CMake Ninja finds MSVC cl.exe
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'msys|mingw' }) -join ';'
+
+          $clPath = where.exe cl 2>&1 | Select-Object -First 1
+          Write-Host "cl.exe at: $clPath"
 
           New-Item -ItemType Directory -Force -Path llvm-project | Out-Null
           Set-Location llvm-project
@@ -122,20 +139,30 @@ jobs:
           git fetch --depth 1 origin "$env:LLVM_TAG"
           git checkout --detach FETCH_HEAD
 
-          cmake -S llvm -B build -G "Visual Studio 17 2022" -A x64 `
+          cmake -S llvm -B build -G Ninja `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_INSTALL_PREFIX="$env:CMAKE_INSTALL_PREFIX" `
-            -DLLVM_ENABLE_PROJECTS="clang;lld" `
+            -DLLVM_ENABLE_PROJECTS="clang" `
             -DLLVM_ENABLE_RTTI:BOOL=ON `
             -DLLVM_ENABLE_LIBXML2=OFF `
             -DLLVM_ENABLE_ZLIB=OFF `
             -DLLVM_ENABLE_ZSTD=OFF `
             -DLLVM_TARGETS_TO_BUILD="host;NVPTX;AMDGPU" `
             -DLLVM_ENABLE_TERMINFO=OFF `
-            -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreadedDLL"
+            -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreadedDLL" `
+            -DLLVM_INCLUDE_TESTS=OFF `
+            -DLLVM_INCLUDE_EXAMPLES=OFF `
+            -DLLVM_INCLUDE_BENCHMARKS=OFF `
+            -DLLVM_INCLUDE_DOCS=OFF `
+            -DCLANG_INCLUDE_TESTS=OFF `
+            -DCLANG_ENABLE_STATIC_ANALYZER=OFF `
+            -DCLANG_ENABLE_ARCMT=OFF `
+            -DLLVM_PARALLEL_LINK_JOBS=2
 
-          cmake --build build --config Release --target ALL_BUILD
-          cmake --build build --config Release --target INSTALL
+          cmake --build build --target all -- -k 0
+          cmake --build build --target install
 
       # ----------  compute package naming ----------
       - name: Compute package name
