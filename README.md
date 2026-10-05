@@ -34,14 +34,15 @@ and checks GitHub's `immutable` field afterward. Existing releases are not retro
 `8a85691a0740d390761a1008b4696f57facd02c4` on native x86_64 and ARM64 runners. Builds and smoke tests run in
 separate, fresh containers. [pins.sh](scripts/glslang/pins.sh) pins both images by digest, including the GCC,
 CMake, Make, Python and binutils versions; no package installation or external source dependencies are needed.
-Other requested release versions are resolved once to an exact source commit before either architecture starts.
-Both builds receive that same commit and source timestamp. The default 15.4.0 revision remains fixed even if its
-upstream tag moves.
+Every requested release version is resolved once to an exact source commit before either architecture starts.
+Both builds receive that same commit and source timestamp. Version defaults live only in the workflow;
+`pins.sh` requires an explicit version, commit, and timestamp. There is no version-specific script branch.
 
-`SOURCE_DATE_EPOCH` is assigned in `scripts/glslang/pins.sh`: 15.4.0 defaults to `1751036750`, its source commit's
-timestamp in seconds since 1970-01-01. For another version, `resolve-source.sh` assigns it from
-`git show -s --format=%ct` on the selected commit. The source job passes it to both builds and the publisher.
-The packaging command uses it for archive timestamps, and `glslang-source.env` records it for reproduction.
+`resolve-source.sh` assigns `SOURCE_DATE_EPOCH` using `git show -s --format=%ct` on the selected commit.
+This is the commit timestamp in seconds since 1970-01-01. For the tested 15.4.0 commit it is `1751036750`.
+The source job passes it to both builds and the publisher. Packaging uses it for archive timestamps.
+Each release records the exact commit and timestamp in `glslang-source.env` for reproduction, even if the
+upstream version tag later moves.
 
 The image tags whose digests were resolved are:
 

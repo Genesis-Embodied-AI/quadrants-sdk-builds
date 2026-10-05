@@ -1,13 +1,5 @@
 # Source this file from Bash. Toolchains and build utilities are pinned by the image digests.
-GLSLANG_VERSION=${GLSLANG_VERSION:-15.4.0}
-if [[ "$GLSLANG_VERSION" == 15.4.0 ]]; then
-    # Keep the known-good default pinned even if its upstream tag is moved.
-    GLSLANG_REVISION=${GLSLANG_REVISION:-8a85691a0740d390761a1008b4696f57facd02c4}
-    SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-1751036750}
-    [[ "$GLSLANG_REVISION" == 8a85691a0740d390761a1008b4696f57facd02c4 ]] || return 1
-    [[ "$SOURCE_DATE_EPOCH" == 1751036750 ]] || return 1
-fi
-[[ "$GLSLANG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
+[[ "${GLSLANG_VERSION:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
 [[ "${GLSLANG_REVISION:-}" =~ ^[0-9a-f]{40}$ ]] || return 1
 [[ "${SOURCE_DATE_EPOCH:-}" =~ ^[0-9]+$ ]] || return 1
 case "${1:?Expected x86_64 or aarch64}" in
