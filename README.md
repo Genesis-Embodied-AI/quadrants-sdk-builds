@@ -58,7 +58,7 @@ downloads. There is no publish checkbox and no need to create a Git tag. GitHub'
 the workflow to be present on the default branch.
 
 Like the existing LLVM workflow, pull requests targeting `main` automatically build when they change this
-workflow or `scripts/glslang/**`. PR builds use `DEFAULT_GLSLANG_VERSION` and publish a branch-named prerelease
+workflow or `scripts/glslang/**`. PR builds use the workflow’s default `GLSLANG_VERSION` and publish a branch-named prerelease
 after validation. A prerelease is a published release marked for testing before the changes reach `main`.
 Manual runs on `main` publish regular releases; other branches publish prereleases. Fork PRs build and validate
 but do not publish. There is no `push` trigger, so pushing a release tag does not start a second build.

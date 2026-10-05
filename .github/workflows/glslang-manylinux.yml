@@ -1,7 +1,7 @@
 name: Build glslang (manylinux)
 
 env:
-  DEFAULT_GLSLANG_VERSION: '15.4.0'
+  GLSLANG_VERSION: ${{ inputs.glslang_version || '15.4.0' }}
 
 on:
   workflow_dispatch:
@@ -24,8 +24,6 @@ permissions:
 jobs:
   build:
     name: glslang-${{ matrix.arch }}
-    env:
-      GLSLANG_VERSION: ${{ inputs.glslang_version || env.DEFAULT_GLSLANG_VERSION }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     strategy:
@@ -81,8 +79,6 @@ jobs:
     name: Publish validated glslang release
     needs: build
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    env:
-      GLSLANG_VERSION: ${{ inputs.glslang_version || env.DEFAULT_GLSLANG_VERSION }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
