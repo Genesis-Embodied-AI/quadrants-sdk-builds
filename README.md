@@ -68,7 +68,7 @@ The version must name an upstream release in `major.minor.patch` form and be at 
 15.4.0 is the validated default; other versions must pass the same build and validation checks before publication.
 Like LLVM, manual release tags use `glslang-<version>-<YYYYMMDDHHMM>` with the current UTC date and time.
 PR tags use `glslang-<version>-<branch>-<YYYYMMDDHHMM>`. Runs on `main` are regular releases; other branches
-are prereleases. A same-version publication within the same minute fails instead of replacing frozen assets.
+are prereleases. A publication that would reuse an existing tag fails instead of replacing frozen assets.
 Each publication waits for both architectures and fails if its release already exists. Per-archive SHA-256 files,
 combined `SHA256SUMS`, validation logs, and `glslang-source.env` accompany the archives. The latter records the
 exact source commit.
@@ -100,7 +100,8 @@ docker run --rm -v "$PWD:/work" -w /work \
 ```
 
 Use a clean checkout/work directory per build. Packaging uses ordinary file timestamps, matching the other SDK workflows.
-Source and toolchain inputs are pinned; archive checksums can differ between builds because file timestamps differ. Validation uses the extracted archive with toolchain search paths removed, checks its ELF
+Source and toolchain inputs are pinned; archive checksums can differ between builds because file timestamps differ.
+Validation uses the extracted archive with toolchain search paths removed, checks its ELF
 runtime dependencies and glibc symbol ceiling, compiles [the requested shader](scripts/glslang/workgroup.comp),
 checks the emitted SPIR-V library structure and export, and compiles an additional shader with a main entry point.
 This is a compiler packaging smoke test, not a GPU execution test or full SPIR-V semantic validation.
