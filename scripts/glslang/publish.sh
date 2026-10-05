@@ -3,6 +3,7 @@ set -euxo pipefail
 (
     cd dist
     for archive in glslang-"$GLSLANG_VERSION"-*.tar.xz; do
+        # Remove the .tar.xz suffix from the archive filename to get the package name.
         PACKAGE=${archive%.tar.xz}
         test -s "$PACKAGE.validation.txt"
         grep -F "PASS: $PACKAGE in " "$PACKAGE.validation.txt"
