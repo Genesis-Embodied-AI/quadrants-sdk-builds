@@ -5,6 +5,7 @@ set -euxo pipefail
     for archive in glslang-"$GLSLANG_VERSION"-*.tar.xz; do
         # Remove the .tar.xz suffix from the archive filename to get the package name.
         PACKAGE=${archive%.tar.xz}
+        # Require the validation log to exist and be nonempty; otherwise stop the script.
         test -s "$PACKAGE.validation.txt"
         grep -F "PASS: $PACKAGE in " "$PACKAGE.validation.txt"
         # Verify the archive matches its saved SHA-256 checksum; a mismatch or missing file stops the script.
