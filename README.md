@@ -22,10 +22,11 @@ libraries are linked statically, with their license notices included; glibc is d
 
 ### Build and publish
 
-Pull requests affecting the recipe build and validate both architectures without publishing. To publish, push a
-new `glslang-15.4.0-<unique-suffix>` tag at the recipe commit, or dispatch the workflow with `publish: true` once
-it is on the default branch. Each publication waits for both architectures and fails if its release already
-exists. Per-archive SHA-256 files, combined `SHA256SUMS`, and validation logs accompany the archives.
+To publish, push a new `glslang-15.4.0-<unique-suffix>` tag at the recipe commit, or dispatch the workflow with
+`publish: true` once it is on the default branch. Manual dispatch defaults to validation only. Pull requests do
+not trigger builds, avoiding duplicate builds when updating a PR and pushing a release tag. Each publication
+waits for both architectures and fails if its release already exists. Per-archive SHA-256 files, combined
+`SHA256SUMS`, and validation logs accompany the archives.
 
 Publication creates a draft, uploads all assets, then publishes without changing the repository's latest release.
 Keep **Settings → General → Releases → Enable release immutability** enabled. The publisher verifies that GitHub
