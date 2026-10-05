@@ -22,7 +22,7 @@ fi
     for arch in x86_64 aarch64; do
         source ../scripts/glslang/pins.sh "$arch"
         test -s "$PACKAGE.validation.txt"
-        grep -F "PASS: $PACKAGE in $BUILD_IMAGE" "$PACKAGE.validation.txt"
+        grep -F "PASS: $PACKAGE in $TARGET_IMAGE" "$PACKAGE.validation.txt"
         sha256sum -c "$PACKAGE.tar.xz.sha256"
     done
     cat ./*.tar.xz.sha256 | LC_ALL=C sort -k2 > SHA256SUMS
@@ -37,7 +37,7 @@ glslang ${GLSLANG_VERSION} GLSL compilers for Quadrants' manylinux CI.
 - Each archive contains bin/glslang, bin/glslangValidator (symlink), licenses/, and BUILD-INFO.txt
   under its glslang-${GLSLANG_VERSION}-manylinux_* directory.
 - GLSL/SPIR-V enabled; optional HLSL and SPIRV-Tools optimizer disabled. No external source dependencies.
-- C++ runtime libraries are static; glibc remains dynamic. All build tools are pinned by container digest.
+- C++ runtime libraries are static; glibc remains dynamic. Build tools come from the selected container image.
 - Both extracted archives passed the exact --no-link -Od Vulkan 1.0 helper compilation in fresh target containers.
 - Validation also checks SPIR-V 1.0, exported helper, WorkgroupId, ELF dependencies and the glibc ceiling.
 - Per-archive SHA-256 files, SHA256SUMS, and full validation logs are attached.

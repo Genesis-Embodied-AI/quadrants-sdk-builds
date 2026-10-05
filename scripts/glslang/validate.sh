@@ -49,4 +49,4 @@ printf '#version 450\nlayout(local_size_x = 1) in;\nvoid main() {}\n' > main.com
 "$exe" -V --target-env vulkan1.0 main.comp -o main.spv
 test -s main.spv
 sha256sum workgroup.spv main.spv
-printf 'PASS: %s in %s\n' "$PACKAGE" "$BUILD_IMAGE"
+printf 'PASS: %s in %s\n' "$PACKAGE" "$TARGET_IMAGE"

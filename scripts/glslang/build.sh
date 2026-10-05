@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run in the digest-pinned target container, with the repository mounted at /work.
+# Run in the target container, with the repository mounted at /work.
 set -euxo pipefail
 cd /work
 source scripts/glslang/pins.sh "$(uname -m)"
@@ -46,7 +46,6 @@ git -C "$src" grep -h -E 'Copyright|copyright' -- '*.cpp' '*.h' '*.y' '*.l' \
     echo 'source_url=https://github.com/KhronosGroup/glslang'
     echo "sdk_builds_revision=${SDK_BUILDS_REVISION:?}"
     echo "target_image=$TARGET_IMAGE"
-    echo "build_image=$BUILD_IMAGE"
     echo 'executable=bin/glslang; compatibility_symlink=bin/glslangValidator'
     echo 'features=GLSL,SPIR-V,no-link; disabled=HLSL,SPIRV-Tools optimizer'
     echo 'runtime=static libstdc++ and libgcc; dynamic glibc'
