@@ -30,7 +30,7 @@ jobs:
       version: ${{ steps.source.outputs.version }}
       revision: ${{ steps.source.outputs.revision }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Resolve the requested release once for both architectures
@@ -59,7 +59,7 @@ jobs:
       run:
         shell: bash --noprofile --norc -euo pipefail {0}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Build in the pinned target image
@@ -81,14 +81,14 @@ jobs:
           docker run --rm -v "$PWD:/work" -w /work \
             -e GLSLANG_VERSION -e GLSLANG_REVISION \
             "$BUILD_IMAGE" bash scripts/glslang/validate.sh 2>&1 | tee "dist/$PACKAGE.validation.txt"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@v4
         with:
           name: glslang-${{ matrix.arch }}
           path: dist/*
           if-no-files-found: error
       - name: Preserve full build and validation output
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@v4
         with:
           name: logs-${{ matrix.arch }}
           path: |
@@ -111,10 +111,10 @@ jobs:
       run:
         shell: bash --noprofile --norc -euo pipefail {0}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@v4
         with:
           pattern: glslang-*
           merge-multiple: true
