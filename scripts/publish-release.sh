@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Publish a new frozen release; refuse to replace an existing release or draft.
+
 # Arguments: <name-prefix> <notes-file> <asset-directory>, with all asset files directly inside that directory.
 # Assumes the caller has validated the assets and finished writing the release notes.
 # Requires gh, with GH_TOKEN authorized for contents: write and GH_REPO matching GITHUB_REPOSITORY.
