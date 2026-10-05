@@ -1,5 +1,8 @@
 name: Build glslang (manylinux)
 
+env:
+  DEFAULT_GLSLANG_VERSION: '15.4.0'
+
 on:
   workflow_dispatch:
     inputs:
@@ -8,6 +11,12 @@ on:
         type: string
         required: true
         default: '15.4.0'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/glslang-manylinux.yml'
+      - 'scripts/glslang/**'
 
 permissions:
   contents: read
@@ -28,7 +37,7 @@ jobs:
       - name: Resolve the requested release once for both architectures
         id: source
         env:
-          GLSLANG_VERSION: ${{ inputs.glslang_version }}
+          GLSLANG_VERSION: ${{ inputs.glslang_version || env.DEFAULT_GLSLANG_VERSION }}
         run: bash scripts/glslang/resolve-source.sh
 
   build:
@@ -92,6 +101,7 @@ jobs:
   release:
     name: Publish validated glslang release
     needs: [source, build]
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     env:
       GLSLANG_VERSION: ${{ needs.source.outputs.version }}
       GLSLANG_REVISION: ${{ needs.source.outputs.revision }}

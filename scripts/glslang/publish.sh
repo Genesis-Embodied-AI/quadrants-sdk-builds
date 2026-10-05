@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 source scripts/glslang/pins.sh x86_64
-tag="glslang-${GLSLANG_VERSION}-$(date -u +%Y%m%d%H%M%S)-${GITHUB_RUN_ID}"
+date_suffix="$(date -u +%Y%m%d%H%M%S)-${GITHUB_RUN_ID}"
+if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+    branch=$(printf '%s' "$GITHUB_HEAD_REF" | tr '/' '-' | tr -cd '[:alnum:]-')
+    tag="glslang-${GLSLANG_VERSION}-${branch}-${date_suffix}"
+else
+    tag="glslang-${GLSLANG_VERSION}-${date_suffix}"
+fi
+prerelease=true
+if [[ "$GITHUB_REF_NAME" == main ]]; then
+    prerelease=false
+fi
 # Never update an existing release. A failed draft must be inspected instead of silently overwritten.
 if gh release view "$tag" >/dev/null 2>&1; then
     echo "Release $tag already exists; use a new tag." >&2
@@ -48,7 +58,8 @@ $(cat dist/SHA256SUMS)
 \`\`\`
 NOTES
 # Create the release tag automatically at the exact build recipe commit.
-gh release create "$tag" --target "$GITHUB_SHA" --draft --title "$tag" --notes-file tmp/release-notes.md
+gh release create "$tag" --target "$GITHUB_SHA" --draft --prerelease="$prerelease" \
+    --title "$tag" --notes-file tmp/release-notes.md
 gh release upload "$tag" dist/*
 # Do not mark this dependency release as the repository's latest LLVM/SDK release.
 gh release edit "$tag" --draft=false --latest=false

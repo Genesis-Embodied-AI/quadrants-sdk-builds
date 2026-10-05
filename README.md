@@ -24,15 +24,23 @@ libraries are linked statically, with their license notices included; glibc is d
 
 ### Build and publish
 
-Open **Actions → Build glslang (manylinux) → Run workflow**, enter `glslang_version` (default `15.4.0`), and run it.
+Open **Actions → Build glslang (manylinux) → Run workflow** on `main`, enter `glslang_version` (default `15.4.0`),
+and run it.
 The workflow builds and validates both architectures, then automatically creates the release and attaches the
-downloads. There is no publish checkbox and no need to create a Git tag. Pull requests and tag pushes do not
-trigger builds. GitHub's manual-dispatch UI requires the workflow to be present on the default branch.
+downloads. There is no publish checkbox and no need to create a Git tag. GitHub's manual-dispatch UI requires
+the workflow to be present on the default branch.
+
+Like the existing LLVM workflow, pull requests targeting `main` automatically build when they change this
+workflow or `scripts/glslang/**`. PR builds use `DEFAULT_GLSLANG_VERSION` and publish a branch-named prerelease
+after validation. A prerelease is a published release marked for testing before the changes reach `main`.
+Manual runs on `main` publish regular releases; other branches publish prereleases. Fork PRs build and validate
+but do not publish. There is no `push` trigger, so pushing a release tag does not start a second build.
 
 The version must name an upstream release in `major.minor.patch` form and be at least 13.1.0 for `--no-link`.
 15.4.0 is the validated default; other versions must pass the same build and validation checks before publication.
-Release tags use `glslang-<version>-<UTC timestamp>-<run ID>`. Each publication waits for both architectures and
-fails if its release already exists. Per-archive SHA-256 files, combined `SHA256SUMS`, validation logs, and
+Manual release tags use `glslang-<version>-<UTC timestamp>-<run ID>`; PR tags also include the branch name.
+Each publication waits for both architectures and fails if its release already exists. Per-archive SHA-256 files,
+combined `SHA256SUMS`, validation logs, and
 `glslang-source.env` accompany the archives. The latter records the exact source commit and timestamp.
 
 Publication creates a draft, uploads all assets, then publishes without changing the repository's latest release.
