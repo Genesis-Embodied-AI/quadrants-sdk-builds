@@ -39,5 +39,6 @@ gh release upload "$tag" "$assets_dir"/*
 # Leave the repository's latest-release selection unchanged.
 gh release edit "$tag" --draft=false --latest=false
 # Checking the release needs only contents access; reading the repository setting needs an admin token.
+# Verify GitHub reports the published release as immutable; stop the script if it does not.
 test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq .immutable)" = true
 gh release view "$tag" --json url,assets
