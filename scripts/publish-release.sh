@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-# Publish a frozen release from a name prefix, notes file, and directory of assets.
+# Publish a new frozen release; refuse to replace an existing release or draft.
+# Arguments: <name-prefix> <notes-file> <asset-directory>, with all asset files directly inside that directory.
+# Assumes the caller has validated the assets and finished writing the release notes.
+# Requires gh, with GH_TOKEN authorized for contents: write and GH_REPO matching GITHUB_REPOSITORY.
+# Workflow inputs: GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_EVENT_NAME, and GITHUB_REF_NAME.
+# Supports workflow_dispatch and pull_request events; PR runs also require GITHUB_HEAD_REF.
+# Assumes release immutability is enabled for the repository and GITHUB_SHA identifies the build recipe commit.
 set -euxo pipefail
 prefix=${1:?Expected release name prefix}
 notes_file=${2:?Expected release notes file}
