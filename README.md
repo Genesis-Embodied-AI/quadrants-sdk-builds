@@ -36,7 +36,14 @@ separate, fresh containers. [pins.sh](scripts/glslang/pins.sh) pins both images 
 CMake, Make, Python and binutils versions; no package installation or external source dependencies are needed.
 Other requested release versions are resolved once to an exact source commit before either architecture starts.
 Both builds receive that same commit and source timestamp. The default 15.4.0 revision remains fixed even if its
-upstream tag moves. The image tags whose digests were resolved are:
+upstream tag moves.
+
+`SOURCE_DATE_EPOCH` is assigned in `scripts/glslang/pins.sh`: 15.4.0 defaults to `1751036750`, its source commit's
+timestamp in seconds since 1970-01-01. For another version, `resolve-source.sh` assigns it from
+`git show -s --format=%ct` on the selected commit. The source job passes it to both builds and the publisher.
+The packaging command uses it for archive timestamps, and `glslang-source.env` records it for reproduction.
+
+The image tags whose digests were resolved are:
 
 - x86_64: `quay.io/pypa/manylinux_2_28_x86_64:latest`
 - ARM64: `quay.io/pypa/manylinux_2_34_aarch64:2025.11.11-1`
