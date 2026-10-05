@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-# Run in the target container, with the repository mounted at /work.
+# Run in the workflow-selected target container, with the repository mounted at /work.
+# Inputs from the workflow: GLSLANG_VERSION, PACKAGE, TARGET_IMAGE, and SDK_BUILDS_REVISION.
 set -euxo pipefail
 cd /work
-source scripts/glslang/pins.sh "$(uname -m)"
+[[ "${GLSLANG_VERSION:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+if [[ "$(printf '%s\n' 13.1.0 "$GLSLANG_VERSION" | sort -V | head -1)" != 13.1.0 ]]; then
+    echo 'glslang 13.1.0 or newer is required for --no-link.' >&2
+    exit 1
+fi
 export LC_ALL=C TZ=UTC
 umask 022
 work=/work/tmp/glslang

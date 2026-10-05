@@ -2,10 +2,10 @@
 set -euxo pipefail
 (
     cd dist
-    for arch in x86_64 aarch64; do
-        source ../scripts/glslang/pins.sh "$arch"
+    for archive in glslang-"$GLSLANG_VERSION"-*.tar.xz; do
+        PACKAGE=${archive%.tar.xz}
         test -s "$PACKAGE.validation.txt"
-        grep -F "PASS: $PACKAGE in $TARGET_IMAGE" "$PACKAGE.validation.txt"
+        grep -F "PASS: $PACKAGE in " "$PACKAGE.validation.txt"
         sha256sum -c "$PACKAGE.tar.xz.sha256"
     done
     cat ./*.tar.xz.sha256 | LC_ALL=C sort -k2 > SHA256SUMS

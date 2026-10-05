@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run in a fresh target manylinux container, with this repository mounted at /work.
-# Input: GLSLANG_VERSION, supplied by the workflow. pins.sh derives PACKAGE and the target from the native architecture.
+# Inputs from the workflow: GLSLANG_VERSION, PACKAGE, TARGET_IMAGE, and GLIBC_MAX (the glibc version ceiling).
 # Input files: /work/dist/$PACKAGE.tar.xz and its .sha256 file, both produced by build.sh.
 # The checksum file contains the archive's SHA-256 checksum and filename; sha256sum -c verifies them.
 # Requires the target image's Bash, coreutils, tar, xz, file, readelf, and ldd tools.
@@ -8,7 +8,6 @@
 # Remove development loader/search paths so they cannot hide missing runtime dependencies.
 set -euxo pipefail
 cd /work
-source scripts/glslang/pins.sh "$(uname -m)"
 export LC_ALL=C PATH=/usr/bin:/bin
 unset LD_LIBRARY_PATH LD_PRELOAD LIBRARY_PATH
 work=/work/tmp/validate
