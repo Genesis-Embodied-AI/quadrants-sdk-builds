@@ -27,6 +27,7 @@ cmake_args=(
     -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF
     -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
     -DPython3_EXECUTABLE=/opt/python/cp310-cp310/bin/python3
+    # Rewrite recorded $work paths to /usr/src/glslang; -ffile-prefix-map already includes the debug-path mapping.
     -DCMAKE_CXX_FLAGS="-ffile-prefix-map=$work=/usr/src/glslang -fdebug-prefix-map=$work=/usr/src/glslang"
     -DCMAKE_EXE_LINKER_FLAGS='-static-libstdc++ -static-libgcc -Wl,--build-id=sha1'
     -DGLSLANG_TESTS=OFF -DGLSLANG_ENABLE_INSTALL=OFF
