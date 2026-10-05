@@ -2,6 +2,32 @@
 
 For building SDKs needed by quadrants CI.
 
+## Workflow and release conventions
+
+For a regular release, open the workflow in **Actions**, select **Run workflow** on `main`, and enter the SDK
+version. The workflow builds the SDK and creates the GitHub release with its downloads attached. Do not create
+a release tag yourself: the publisher creates one automatically.
+
+`workflow_dispatch` is the manual event; it is not the event used to test PR changes. The LLVM and glslang
+workflows also use `pull_request` for automatic PR builds targeting `main`, limited to their relevant files.
+These runs use the workflow's default SDK version. Successful same-repository PR runs publish branch-named
+prereleases, meaning releases marked for testing before merge. Runs on `main` publish regular releases.
+
+| Workflow | Manual version input | Automatic PR builds |
+| --- | --- | --- |
+| [LLVM](.github/workflows/llvm-ci.yml) | `llvm_version` | Changes to its workflow file |
+| [glslang](.github/workflows/glslang-manylinux.yml) | `glslang_version` | Its workflow or `scripts/glslang/**` |
+| [Vulkan ARM](.github/workflows/vulkan-arm.yml) | `version` | Currently disabled in that workflow |
+
+For example, [PR #14](https://github.com/Genesis-Embodied-AI/quadrants-sdk-builds/pull/14) ran through the
+`pull_request` event and published branch-named LLVM prereleases. The later manual run on `main` published the
+regular LLVM release. Follow that pattern for new SDK build workflows. Do not add a tag-push trigger alongside
+PR builds: it is unnecessary for publication and can duplicate the same build.
+
+Release immutability is enabled for this repository. Upload all downloads to a draft release before publishing
+it, because its files become frozen when published. The glslang publisher implements this sequence explicitly
+and checks GitHub's `immutable` field afterward. Existing releases are not retroactively frozen.
+
 ## glslang for manylinux
 
 [Build glslang (manylinux)](.github/workflows/glslang-manylinux.yml) defaults to **15.4.0** at
@@ -25,8 +51,7 @@ libraries are linked statically, with their license notices included; glibc is d
 ### Build and publish
 
 Open **Actions → Build glslang (manylinux) → Run workflow** on `main`, enter `glslang_version` (default `15.4.0`),
-and run it.
-The workflow builds and validates both architectures, then automatically creates the release and attaches the
+and run it. The workflow builds and validates both architectures, then automatically creates the release and attaches the
 downloads. There is no publish checkbox and no need to create a Git tag. GitHub's manual-dispatch UI requires
 the workflow to be present on the default branch.
 
@@ -40,8 +65,8 @@ The version must name an upstream release in `major.minor.patch` form and be at 
 15.4.0 is the validated default; other versions must pass the same build and validation checks before publication.
 Manual release tags use `glslang-<version>-<UTC timestamp>-<run ID>`; PR tags also include the branch name.
 Each publication waits for both architectures and fails if its release already exists. Per-archive SHA-256 files,
-combined `SHA256SUMS`, validation logs, and
-`glslang-source.env` accompany the archives. The latter records the exact source commit and timestamp.
+combined `SHA256SUMS`, validation logs, and `glslang-source.env` accompany the archives. The latter records the
+exact source commit and timestamp.
 
 Publication creates a draft, uploads all assets, then publishes without changing the repository's latest release.
 Keep **Settings → General → Releases → Enable release immutability** enabled. The publisher verifies that GitHub
