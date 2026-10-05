@@ -40,7 +40,7 @@ if grep -E 'GLIBCXX_|CXXABI_' "$work/symbols.txt"; then
     echo 'Unexpected C++ runtime symbol dependency' >&2
     exit 1
 fi
-cp scripts/glslang/workgroup.comp "$work/workgroup.comp"
+cp scripts/glslang/tests/workgroup.comp "$work/workgroup.comp"
 cd "$work"
 "$exe" -V --target-env vulkan1.0 --no-link -Od workgroup.comp -o workgroup.spv
 /opt/python/cp310-cp310/bin/python3 /work/scripts/glslang/check-spirv.py workgroup.spv
