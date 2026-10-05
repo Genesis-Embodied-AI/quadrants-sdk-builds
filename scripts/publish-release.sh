@@ -19,7 +19,7 @@ date_suffix=$(date -u +%Y%m%d%H%M)
 if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
     tag="${prefix}-${date_suffix}"
 else
-    # tr -cd deletes (-d) characters outside (-c) the allowed set: letters, digits, and hyphens.
+    # tr -cd deletes (-d) characters outside (-c) the allowed set
     branch=$(printf '%s' "$GITHUB_HEAD_REF" | tr '/' '-' | tr -cd '[:alnum:]-')
     tag="${prefix}-${branch}-${date_suffix}"
 fi
