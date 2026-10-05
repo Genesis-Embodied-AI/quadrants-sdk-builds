@@ -18,13 +18,11 @@ git init -q "$work"
 git -C "$work" fetch --depth 1 https://github.com/KhronosGroup/glslang.git "refs/tags/$version"
 git -C "$work" checkout --detach -q FETCH_HEAD
 GLSLANG_REVISION=$(git -C "$work" rev-parse HEAD)
-SOURCE_DATE_EPOCH=$(git -C "$work" show -s --format=%ct)
-export GLSLANG_REVISION SOURCE_DATE_EPOCH
+export GLSLANG_REVISION
 source scripts/glslang/pins.sh x86_64
 
-printf 'glslang %s: %s (source timestamp %s)\n' "$GLSLANG_VERSION" "$GLSLANG_REVISION" "$SOURCE_DATE_EPOCH"
+printf 'glslang %s: %s\n' "$GLSLANG_VERSION" "$GLSLANG_REVISION"
 {
     echo "version=$GLSLANG_VERSION"
     echo "revision=$GLSLANG_REVISION"
-    echo "epoch=$SOURCE_DATE_EPOCH"
 } >> "${GITHUB_OUTPUT:?Set GITHUB_OUTPUT to the output file}"

@@ -13,7 +13,6 @@ git -C "$src" remote add origin https://github.com/KhronosGroup/glslang.git
 git -C "$src" fetch --depth 1 origin "$GLSLANG_REVISION"
 git -C "$src" checkout --detach FETCH_HEAD
 test "$(git -C "$src" rev-parse HEAD)" = "$GLSLANG_REVISION"
-test "$(git -C "$src" show -s --format=%ct)" = "$SOURCE_DATE_EPOCH"
 
 # GLSL-only, with no optimizer: the --no-link -Od helper compilation needs no external source dependencies.
 # Static C++ runtimes avoid dependencies on the manylinux build toolchain at execution time.
@@ -49,7 +48,6 @@ git -C "$src" grep -h -E 'Copyright|copyright' -- '*.cpp' '*.h' '*.y' '*.l' \
     echo "sdk_builds_revision=${SDK_BUILDS_REVISION:?}"
     echo "target_image=$TARGET_IMAGE"
     echo "build_image=$BUILD_IMAGE"
-    echo "source_date_epoch=$SOURCE_DATE_EPOCH"
     echo 'executable=bin/glslang; compatibility_symlink=bin/glslangValidator'
     echo 'features=GLSL,SPIR-V,no-link; disabled=HLSL,SPIRV-Tools optimizer'
     echo 'runtime=static libstdc++ and libgcc; dynamic glibc'
@@ -65,7 +63,6 @@ git -C "$src" grep -h -E 'Copyright|copyright' -- '*.cpp' '*.h' '*.y' '*.l' \
     rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | LC_ALL=C sort
 } > "$stage/BUILD-INFO.txt"
 
-# Stable ordering, ownership, permissions and timestamps; single-threaded xz is deterministic.
-tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner \
-    -C "$work/package" -cf - "$PACKAGE" | xz -T1 -9 > "/work/dist/$PACKAGE.tar.xz"
+# Package with ordinary file timestamps, following the other SDK workflows.
+tar -C "$work/package" -cJf "/work/dist/$PACKAGE.tar.xz" "$PACKAGE"
 (cd /work/dist && sha256sum "$PACKAGE.tar.xz" > "$PACKAGE.tar.xz.sha256")

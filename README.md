@@ -35,14 +35,9 @@ and checks GitHub's `immutable` field afterward. Existing releases are not retro
 separate, fresh containers. [pins.sh](scripts/glslang/pins.sh) pins both images by digest, including the GCC,
 CMake, Make, Python and binutils versions; no package installation or external source dependencies are needed.
 Every requested release version is resolved once to an exact source commit before either architecture starts.
-Both builds receive that same commit and source timestamp. Version defaults live only in the workflow;
-`pins.sh` requires an explicit version, commit, and timestamp. There is no version-specific script branch.
-
-`resolve-source.sh` assigns `SOURCE_DATE_EPOCH` using `git show -s --format=%ct` on the selected commit.
-This is the commit timestamp in seconds since 1970-01-01. For the tested 15.4.0 commit it is `1751036750`.
-The source job passes it to both builds and the publisher. Packaging uses it for archive timestamps.
-Each release records the exact commit and timestamp in `glslang-source.env` for reproduction, even if the
-upstream version tag later moves.
+Both builds receive that same commit. Version defaults live only in the workflow; `pins.sh` requires an
+explicit version and commit. There is no version-specific script branch. Each release records the exact commit
+in `glslang-source.env` for reproduction, even if the upstream version tag later moves.
 
 The image tags whose digests were resolved are:
 
@@ -71,10 +66,12 @@ but do not publish. There is no `push` trigger, so pushing a release tag does no
 
 The version must name an upstream release in `major.minor.patch` form and be at least 13.1.0 for `--no-link`.
 15.4.0 is the validated default; other versions must pass the same build and validation checks before publication.
-Manual release tags use `glslang-<version>-<UTC timestamp>-<run ID>`; PR tags also include the branch name.
+Like LLVM, manual release tags use `glslang-<version>-<YYYYMMDDHHMM>` with the current UTC date and time.
+PR tags use `glslang-<version>-<branch>-<YYYYMMDDHHMM>`. Runs on `main` are regular releases; other branches
+are prereleases. A same-version publication within the same minute fails instead of replacing frozen assets.
 Each publication waits for both architectures and fails if its release already exists. Per-archive SHA-256 files,
 combined `SHA256SUMS`, validation logs, and `glslang-source.env` accompany the archives. The latter records the
-exact source commit and timestamp.
+exact source commit.
 
 Publication creates a draft, uploads all assets, then publishes without changing the repository's latest release.
 Keep **Settings → General → Releases → Enable release immutability** enabled. The publisher verifies that GitHub
@@ -94,17 +91,16 @@ source scripts/glslang/pins.sh "$(uname -m)"
 mkdir -p tmp dist
 docker pull "$BUILD_IMAGE"
 docker run --rm -v "$PWD:/work" -w /work -e SDK_BUILDS_REVISION="$(git rev-parse HEAD)" \
-  -e GLSLANG_VERSION -e GLSLANG_REVISION -e SOURCE_DATE_EPOCH \
+  -e GLSLANG_VERSION -e GLSLANG_REVISION \
   "$BUILD_IMAGE" bash scripts/glslang/build.sh 2>&1 | tee tmp/build.log
 docker run --rm -v "$PWD:/work" -w /work \
-  -e GLSLANG_VERSION -e GLSLANG_REVISION -e SOURCE_DATE_EPOCH \
+  -e GLSLANG_VERSION -e GLSLANG_REVISION \
   "$BUILD_IMAGE" bash scripts/glslang/validate.sh 2>&1 | tee tmp/validation.log
 (cd dist && sha256sum -c "$PACKAGE.tar.xz.sha256")
 ```
 
-Use a clean checkout/work directory per build. Packaging normalizes file order, ownership, timestamps and xz
-compression. Source and toolchain inputs are pinned; byte-for-byte reproducibility across independent hosts has
-not been established. Validation uses the extracted archive with toolchain search paths removed, checks its ELF
+Use a clean checkout/work directory per build. Packaging uses ordinary file timestamps, matching the other SDK workflows.
+Source and toolchain inputs are pinned; archive checksums can differ between builds because file timestamps differ. Validation uses the extracted archive with toolchain search paths removed, checks its ELF
 runtime dependencies and glibc symbol ceiling, compiles [the requested shader](scripts/glslang/workgroup.comp),
 checks the emitted SPIR-V library structure and export, and compiles an additional shader with a main entry point.
 This is a compiler packaging smoke test, not a GPU execution test or full SPIR-V semantic validation.

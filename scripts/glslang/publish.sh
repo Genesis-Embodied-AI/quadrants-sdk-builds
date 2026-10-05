@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 source scripts/glslang/pins.sh x86_64
-date_suffix="$(date -u +%Y%m%d%H%M%S)-${GITHUB_RUN_ID}"
-if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+date_suffix=$(date -u +%Y%m%d%H%M)
+if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+    tag="glslang-${GLSLANG_VERSION}-${date_suffix}"
+else
     branch=$(printf '%s' "$GITHUB_HEAD_REF" | tr '/' '-' | tr -cd '[:alnum:]-')
     tag="glslang-${GLSLANG_VERSION}-${branch}-${date_suffix}"
-else
-    tag="glslang-${GLSLANG_VERSION}-${date_suffix}"
 fi
 prerelease=true
 if [[ "$GITHUB_REF_NAME" == main ]]; then
@@ -31,7 +31,6 @@ fi
 {
     echo "export GLSLANG_VERSION=$GLSLANG_VERSION"
     echo "export GLSLANG_REVISION=$GLSLANG_REVISION"
-    echo "export SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
 } > dist/glslang-source.env
 mkdir -p tmp
 cat > tmp/release-notes.md <<NOTES
