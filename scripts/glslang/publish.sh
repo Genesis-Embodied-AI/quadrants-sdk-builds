@@ -41,6 +41,7 @@ glslang ${GLSLANG_VERSION} GLSL compilers for Quadrants' manylinux CI.
 - Both extracted archives passed the exact --no-link -Od Vulkan 1.0 helper compilation in fresh target containers.
 - Validation also checks SPIR-V 1.0, exported helper, WorkgroupId, ELF dependencies and the glibc ceiling.
 - Per-archive SHA-256 files, SHA256SUMS, and full validation logs are attached.
+- Validation logs record the container image digests actually used; images are selected by tag.
 - BUILD-INFO.txt in each archive records the exact source commit built.
 
 This workflow never replaces releases or assets. Uploads finish in draft state before publication,

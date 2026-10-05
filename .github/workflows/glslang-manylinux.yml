@@ -57,9 +57,11 @@ jobs:
           ARCH: ${{ matrix.arch }}
         run: |
           source scripts/glslang/pins.sh "$ARCH"
+          docker image inspect "$TARGET_IMAGE" --format 'Used container image: {{json .RepoDigests}}' \
+            | tee -a "dist/$PACKAGE.validation.txt"
           docker run --rm -v "$PWD:/work" -w /work \
             -e GLSLANG_VERSION \
-            "$TARGET_IMAGE" bash scripts/glslang/validate.sh 2>&1 | tee "dist/$PACKAGE.validation.txt"
+            "$TARGET_IMAGE" bash scripts/glslang/validate.sh 2>&1 | tee -a "dist/$PACKAGE.validation.txt"
       - uses: actions/upload-artifact@v4
         with:
           name: glslang-${{ matrix.arch }}

@@ -39,7 +39,8 @@ Like LLVM, each architecture fetches the requested upstream version tag directly
 in the workflow; scripts require `GLSLANG_VERSION`. There is no separate source-resolution job or shared
 revision input. Each archive records its actual source commit in `BUILD-INFO.txt` using `git rev-parse HEAD`.
 
-The container image tags are:
+The workflow records Docker’s resolved image digests in the published validation logs for traceability.
+These recorded values are not build inputs. The container image tags are:
 
 - x86_64: `quay.io/pypa/manylinux_2_28_x86_64:latest`
 - ARM64: `quay.io/pypa/manylinux_2_34_aarch64:2025.11.11-1`
