@@ -50,5 +50,7 @@ gh release create "$tag" --target "$GITHUB_SHA" --draft --title "$tag" --notes-f
 gh release upload "$tag" dist/*
 # Do not mark this dependency release as the repository's latest LLVM/SDK release.
 gh release edit "$tag" --draft=false --latest=false
+# Checking the release needs only contents access; reading the repository setting needs an admin token.
+test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq .immutable)" = true
 gh release view "$tag" --json url,assets > tmp/published-release.json
 cat tmp/published-release.json

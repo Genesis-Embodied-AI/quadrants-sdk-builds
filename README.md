@@ -28,7 +28,8 @@ it is on the default branch. Each publication waits for both architectures and f
 exists. Per-archive SHA-256 files, combined `SHA256SUMS`, and validation logs accompany the archives.
 
 Publication creates a draft, uploads all assets, then publishes without changing the repository's latest release.
-Enable **Settings → General → Releases → Enable release immutability** to freeze the assets and tag on publication.
+Keep **Settings → General → Releases → Enable release immutability** enabled. The publisher verifies that GitHub
+froze the release after publication and fails if it did not. This setting is enabled for this repository.
 This repository setting affects future releases of all SDKs: other publishers must also upload their assets before
 publishing. Already published releases are not retroactively frozen. No workflow uses `--clobber` or force-pushes.
 
