@@ -66,7 +66,7 @@ jobs:
             "$TARGET_IMAGE" bash scripts/glslang/build.sh 2>&1 | tee "tmp/build-$ARCH.log"
       - name: Validate the archive in a fresh target container
         run: |
-          # Docker (not the shell) turns {{json .RepoDigests}} into a string representing a JSON list of repo digests.
+          # Docker, not the shell: {{json .RepoDigests}} outputs a string containing a JSON list of repo digest strings.
           docker image inspect "$TARGET_IMAGE" --format 'Used container image: {{json .RepoDigests}}' \
             | tee -a "dist/$PACKAGE.validation.txt"
           docker run --rm -v "$PWD:/work" -w /work \
