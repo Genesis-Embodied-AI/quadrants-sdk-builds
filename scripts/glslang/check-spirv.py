@@ -24,5 +24,5 @@ for op, args in instructions:
     if op == 71 and len(args) >= 4 and args[1] == 41 and args[-1] == 0:
         name_bytes = struct.pack(f"<{len(args) - 3}I", *args[2:-1])
         exports.append(name_bytes.split(b"\0", 1)[0].decode())
-assert any(name.startswith("get_work_group_id(") for name in exports), f"Missing helper export: {exports}"
+assert "get_work_group_id" in exports, f"Missing helper export: {exports}"
 print(f"PASS: {len(blob)} bytes, SPIR-V 1.0, Linkage, WorkgroupId, no entry point, exports={exports}")
