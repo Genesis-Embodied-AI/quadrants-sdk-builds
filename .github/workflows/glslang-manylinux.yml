@@ -1,0 +1,126 @@
+name: Build glslang (manylinux)
+
+env:
+  DEFAULT_GLSLANG_VERSION: '15.4.0'
+
+on:
+  workflow_dispatch:
+    inputs:
+      glslang_version:
+        description: 'glslang release version to build and publish (e.g. 15.4.0)'
+        type: string
+        required: true
+        default: '15.4.0'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/glslang-manylinux.yml'
+      - 'scripts/glslang/**'
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    name: Resolve glslang source
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.source.outputs.version }}
+      revision: ${{ steps.source.outputs.revision }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Resolve the requested release once for both architectures
+        id: source
+        env:
+          GLSLANG_VERSION: ${{ inputs.glslang_version || env.DEFAULT_GLSLANG_VERSION }}
+        run: bash scripts/glslang/resolve-source.sh
+
+  build:
+    name: glslang-${{ matrix.arch }}
+    needs: source
+    env:
+      GLSLANG_VERSION: ${{ needs.source.outputs.version }}
+      GLSLANG_REVISION: ${{ needs.source.outputs.revision }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-22.04
+          - arch: aarch64
+            runner: ubuntu-22.04-arm
+    defaults:
+      run:
+        shell: bash --noprofile --norc -euo pipefail {0}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Build in the pinned target image
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          source scripts/glslang/pins.sh "$ARCH"
+          mkdir -p tmp dist
+          docker pull "$BUILD_IMAGE"
+          docker run --rm -v "$PWD:/work" -w /work \
+            -e SDK_BUILDS_REVISION="$(git rev-parse HEAD)" \
+            -e GLSLANG_VERSION -e GLSLANG_REVISION \
+            "$BUILD_IMAGE" bash scripts/glslang/build.sh 2>&1 | tee "tmp/build-$ARCH.log"
+      - name: Validate the archive in a fresh target container
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          source scripts/glslang/pins.sh "$ARCH"
+          docker run --rm -v "$PWD:/work" -w /work \
+            -e GLSLANG_VERSION -e GLSLANG_REVISION \
+            "$BUILD_IMAGE" bash scripts/glslang/validate.sh 2>&1 | tee "dist/$PACKAGE.validation.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: glslang-${{ matrix.arch }}
+          path: dist/*
+          if-no-files-found: error
+      - name: Preserve full build and validation output
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: logs-${{ matrix.arch }}
+          path: |
+            tmp/build-*.log
+            dist/*.validation.txt
+          if-no-files-found: warn
+
+  release:
+    name: Publish validated glslang release
+    needs: [source, build]
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      GLSLANG_VERSION: ${{ needs.source.outputs.version }}
+      GLSLANG_REVISION: ${{ needs.source.outputs.revision }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash --noprofile --norc -euo pipefail {0}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: glslang-*
+          merge-multiple: true
+          path: dist
+      - name: Publish once, with all assets uploaded before freezing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/glslang/publish.sh
