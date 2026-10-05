@@ -1,0 +1,114 @@
+name: Build glslang (manylinux)
+
+env:
+  GLSLANG_VERSION: ${{ inputs.glslang_version || '15.4.0' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      glslang_version:
+        description: 'glslang release version to build and publish (e.g. 15.4.0)'
+        type: string
+        required: true
+        default: '15.4.0'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/glslang-manylinux.yml'
+      - 'scripts/glslang/**'
+      - 'scripts/publish-release.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: glslang-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      PLATFORM: ${{ matrix.platform }}
+      TARGET_IMAGE: ${{ matrix.image }}
+      GLIBC_MAX: ${{ matrix.glibc }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-22.04
+            platform: manylinux_2_28_x86_64
+            image: quay.io/pypa/manylinux_2_28_x86_64:latest
+            glibc: '2.28'
+          - arch: aarch64
+            runner: ubuntu-22.04-arm
+            platform: manylinux_2_34_aarch64
+            image: quay.io/pypa/manylinux_2_34_aarch64:2025.11.11-1
+            glibc: '2.34'
+    defaults:
+      run:
+        shell: bash --noprofile --norc -euo pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set package name
+        run: echo "PACKAGE=glslang-${GLSLANG_VERSION}-${PLATFORM}" >> "$GITHUB_ENV"
+      - name: Build in the target image
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p tmp dist
+          docker pull "$TARGET_IMAGE"
+          docker run --rm -v "$PWD:/work" -w /work \
+            -e SDK_BUILDS_REVISION="$(git rev-parse HEAD)" \
+            -e GLSLANG_VERSION -e PACKAGE -e TARGET_IMAGE -e GLIBC_MAX \
+            "$TARGET_IMAGE" bash scripts/glslang/build.sh 2>&1 | tee "tmp/build-$ARCH.log"
+      - name: Validate the archive in a fresh target container
+        run: |
+          # Docker, not the shell: {{json .RepoDigests}} outputs a string containing a JSON list of repo digest strings.
+          docker image inspect "$TARGET_IMAGE" --format 'Used container image: {{json .RepoDigests}}' \
+            | tee -a "dist/$PACKAGE.validation.txt"
+          docker run --rm -v "$PWD:/work" -w /work \
+            -e GLSLANG_VERSION -e PACKAGE -e TARGET_IMAGE -e GLIBC_MAX \
+            "$TARGET_IMAGE" bash scripts/glslang/validate.sh 2>&1 | tee -a "dist/$PACKAGE.validation.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: glslang-${{ matrix.arch }}
+          path: dist/*
+          if-no-files-found: error
+      - name: Preserve full build and validation output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.arch }}
+          path: |
+            tmp/build-*.log
+            dist/*.validation.txt
+          if-no-files-found: warn
+
+  release:
+    name: Publish validated glslang release
+    needs: build
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash --noprofile --norc -euo pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: glslang-*
+          merge-multiple: true
+          path: dist
+      - name: Publish once, with all assets uploaded before freezing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/glslang/publish.sh
