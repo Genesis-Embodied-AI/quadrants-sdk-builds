@@ -22,7 +22,8 @@ glslang ${GLSLANG_VERSION} GLSL compilers for Quadrants' manylinux CI.
 - GLSL/SPIR-V enabled; optional HLSL and SPIRV-Tools optimizer disabled. No external source dependencies.
 - C++ runtime libraries are static; glibc remains dynamic. Build tools come from the selected container image.
 - Both extracted archives passed the exact --no-link -Od Vulkan 1.0 helper compilation in fresh target containers.
-- Validation also checks SPIR-V 1.0, exported helper, WorkgroupId, ELF dependencies and the glibc ceiling.
+- Validation checks nonempty shader output, ELF dependencies and the glibc ceiling.
+- Detailed shader correctness and integration testing are left to downstream users.
 - Per-archive SHA-256 files, SHA256SUMS, and full validation logs are attached.
 - Validation logs record the container image digests actually used; images are selected by tag.
 - BUILD-INFO.txt in each archive records the exact source commit built.
