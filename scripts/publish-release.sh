@@ -8,6 +8,7 @@
 # Supports workflow_dispatch and pull_request events; PR runs also require GITHUB_HEAD_REF.
 # Assumes release immutability is enabled for the repository and GITHUB_SHA identifies the build recipe commit.
 set -euxo pipefail
+# Assign the first argument to prefix; :? prints the error and exits if the argument is missing or empty.
 prefix=${1:?Expected release name prefix}
 notes_file=${2:?Expected release notes file}
 assets_dir=${3:?Expected asset directory}
