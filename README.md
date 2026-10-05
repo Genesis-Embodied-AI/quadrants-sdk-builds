@@ -19,3 +19,8 @@ a release tag can then start a duplicate build.
 Release immutability is enabled for this repository. Upload all downloads to a draft release before publishing
 it, because its files become frozen when published. Keep **Settings → General → Releases → Enable release
 immutability** enabled. Existing releases are not retroactively frozen.
+
+`scripts/publish-release.sh <name-prefix> <notes-file> <asset-directory>` provides shared publication logic.
+It adds the date and optional PR branch to the name, uploads the files from the asset directory to a draft,
+and publishes a frozen release. Call it after validation, with all assets directly inside that directory.
+Workflows using this helper should include its path in their PR trigger filters.

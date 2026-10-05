@@ -17,6 +17,7 @@ on:
     paths:
       - '.github/workflows/glslang-manylinux.yml'
       - 'scripts/glslang/**'
+      - 'scripts/publish-release.sh'
 
 permissions:
   contents: read
