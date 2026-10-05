@@ -13,12 +13,6 @@ workflows also use `pull_request` for automatic PR builds targeting `main`, limi
 These runs use the workflow's default SDK version. Successful same-repository PR runs publish branch-named
 prereleases, meaning releases marked for testing before merge. Runs on `main` publish regular releases.
 
-| Workflow | Manual version input | Automatic PR builds |
-| --- | --- | --- |
-| [LLVM](.github/workflows/llvm-ci.yml) | `llvm_version` | Changes to its workflow file |
-| [glslang](.github/workflows/glslang-manylinux.yml) | `glslang_version` | Its workflow or `scripts/glslang/**` |
-| [Vulkan ARM](.github/workflows/vulkan-arm.yml) | `version` | Currently disabled in that workflow |
-
 For example, [PR #14](https://github.com/Genesis-Embodied-AI/quadrants-sdk-builds/pull/14) ran through the
 `pull_request` event and published branch-named LLVM prereleases. The later manual run on `main` published the
 regular LLVM release. Follow that pattern for new SDK build workflows. Do not add a tag-push trigger alongside
