@@ -8,7 +8,9 @@ if [[ "$(printf '%s\n' 13.1.0 "$GLSLANG_VERSION" | sort -V | head -1)" != 13.1.0
     echo 'glslang 13.1.0 or newer is required for --no-link.' >&2
     exit 1
 fi
+# Use the C locale for consistent sorting and text formatting, and UTC for local-time formatting.
 export LC_ALL=C TZ=UTC
+# Remove group/other write permission from new files and directories, typically giving files 644 and directories 755.
 umask 022
 work=/work/tmp/glslang
 mkdir -p "$work" /work/dist
