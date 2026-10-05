@@ -14,6 +14,7 @@ notes_file=${2:?Expected release notes file}
 assets_dir=${3:?Expected asset directory}
 test -f "$notes_file"
 test -d "$assets_dir"
+# Format the current UTC time as YYYYMMDDHHMM; for example, 2026-10-05 17:22 UTC becomes 202610051722.
 date_suffix=$(date -u +%Y%m%d%H%M)
 if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
     tag="${prefix}-${date_suffix}"
