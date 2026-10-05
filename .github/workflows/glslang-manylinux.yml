@@ -22,29 +22,10 @@ permissions:
   contents: read
 
 jobs:
-  source:
-    name: Resolve glslang source
-    runs-on: ubuntu-22.04
-    timeout-minutes: 10
-    outputs:
-      version: ${{ steps.source.outputs.version }}
-      revision: ${{ steps.source.outputs.revision }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Resolve the requested release once for both architectures
-        id: source
-        env:
-          GLSLANG_VERSION: ${{ inputs.glslang_version || env.DEFAULT_GLSLANG_VERSION }}
-        run: bash scripts/glslang/resolve-source.sh
-
   build:
     name: glslang-${{ matrix.arch }}
-    needs: source
     env:
-      GLSLANG_VERSION: ${{ needs.source.outputs.version }}
-      GLSLANG_REVISION: ${{ needs.source.outputs.revision }}
+      GLSLANG_VERSION: ${{ inputs.glslang_version || env.DEFAULT_GLSLANG_VERSION }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     strategy:
@@ -71,7 +52,7 @@ jobs:
           docker pull "$BUILD_IMAGE"
           docker run --rm -v "$PWD:/work" -w /work \
             -e SDK_BUILDS_REVISION="$(git rev-parse HEAD)" \
-            -e GLSLANG_VERSION -e GLSLANG_REVISION \
+            -e GLSLANG_VERSION \
             "$BUILD_IMAGE" bash scripts/glslang/build.sh 2>&1 | tee "tmp/build-$ARCH.log"
       - name: Validate the archive in a fresh target container
         env:
@@ -79,7 +60,7 @@ jobs:
         run: |
           source scripts/glslang/pins.sh "$ARCH"
           docker run --rm -v "$PWD:/work" -w /work \
-            -e GLSLANG_VERSION -e GLSLANG_REVISION \
+            -e GLSLANG_VERSION \
             "$BUILD_IMAGE" bash scripts/glslang/validate.sh 2>&1 | tee "dist/$PACKAGE.validation.txt"
       - uses: actions/upload-artifact@v4
         with:
@@ -98,11 +79,10 @@ jobs:
 
   release:
     name: Publish validated glslang release
-    needs: [source, build]
+    needs: build
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     env:
-      GLSLANG_VERSION: ${{ needs.source.outputs.version }}
-      GLSLANG_REVISION: ${{ needs.source.outputs.revision }}
+      GLSLANG_VERSION: ${{ inputs.glslang_version || env.DEFAULT_GLSLANG_VERSION }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:

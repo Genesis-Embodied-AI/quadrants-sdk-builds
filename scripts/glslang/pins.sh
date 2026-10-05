@@ -1,6 +1,9 @@
 # Source this file from Bash. Toolchains and build utilities are pinned by the image digests.
 [[ "${GLSLANG_VERSION:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
-[[ "${GLSLANG_REVISION:-}" =~ ^[0-9a-f]{40}$ ]] || return 1
+if [[ "$(printf '%s\n' 13.1.0 "$GLSLANG_VERSION" | sort -V | head -1)" != 13.1.0 ]]; then
+    echo 'glslang 13.1.0 or newer is required for --no-link.' >&2
+    return 1
+fi
 case "${1:?Expected x86_64 or aarch64}" in
     x86_64)
         PLATFORM=manylinux_2_28_x86_64
@@ -18,4 +21,4 @@ case "${1:?Expected x86_64 or aarch64}" in
 esac
 BUILD_IMAGE="${TARGET_IMAGE%@*}@${IMAGE_DIGEST}"
 PACKAGE="glslang-${GLSLANG_VERSION}-${PLATFORM}"
-export GLSLANG_VERSION GLSLANG_REVISION
+export GLSLANG_VERSION

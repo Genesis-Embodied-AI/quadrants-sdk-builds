@@ -34,10 +34,9 @@ and checks GitHub's `immutable` field afterward. Existing releases are not retro
 `8a85691a0740d390761a1008b4696f57facd02c4` on native x86_64 and ARM64 runners. Builds and smoke tests run in
 separate, fresh containers. [pins.sh](scripts/glslang/pins.sh) pins both images by digest, including the GCC,
 CMake, Make, Python and binutils versions; no package installation or external source dependencies are needed.
-Every requested release version is resolved once to an exact source commit before either architecture starts.
-Both builds receive that same commit. Version defaults live only in the workflow; `pins.sh` requires an
-explicit version and commit. There is no version-specific script branch. Each release records the exact commit
-in `glslang-source.env` for reproduction, even if the upstream version tag later moves.
+Like LLVM, each architecture fetches the requested upstream version tag directly. Version defaults live only
+in the workflow; scripts require `GLSLANG_VERSION`. There is no separate source-resolution job or shared
+revision input. Each archive records its actual source commit in `BUILD-INFO.txt` using `git rev-parse HEAD`.
 
 The image tags whose digests were resolved are:
 
@@ -70,8 +69,7 @@ Like LLVM, manual release tags use `glslang-<version>-<YYYYMMDDHHMM>` with the c
 PR tags use `glslang-<version>-<branch>-<YYYYMMDDHHMM>`. Runs on `main` are regular releases; other branches
 are prereleases. A publication that would reuse an existing tag fails instead of replacing frozen assets.
 Each publication waits for both architectures and fails if its release already exists. Per-archive SHA-256 files,
-combined `SHA256SUMS`, validation logs, and `glslang-source.env` accompany the archives. The latter records the
-exact source commit.
+combined `SHA256SUMS` and validation logs accompany the archives.
 
 Publication creates a draft, uploads all assets, then publishes without changing the repository's latest release.
 Keep **Settings → General → Releases → Enable release immutability** enabled. The publisher verifies that GitHub
@@ -81,26 +79,26 @@ publishing. Already published releases are not retroactively frozen. No workflow
 
 ### Reproduce on a native Linux host with Docker
 
-Check out the release tag and download its `glslang-source.env` asset to the repository root. Then run from that
-directory (requires Docker and the matching host architecture):
+Check out the SDK release tag. From that directory, set the glslang version to build and run the following
+commands (requires Docker and the matching host architecture):
 
 ```bash
 set -euo pipefail
-source glslang-source.env
+export GLSLANG_VERSION=15.4.0 # Set this to the requested upstream release version.
 source scripts/glslang/pins.sh "$(uname -m)"
 mkdir -p tmp dist
 docker pull "$BUILD_IMAGE"
 docker run --rm -v "$PWD:/work" -w /work -e SDK_BUILDS_REVISION="$(git rev-parse HEAD)" \
-  -e GLSLANG_VERSION -e GLSLANG_REVISION \
+  -e GLSLANG_VERSION \
   "$BUILD_IMAGE" bash scripts/glslang/build.sh 2>&1 | tee tmp/build.log
 docker run --rm -v "$PWD:/work" -w /work \
-  -e GLSLANG_VERSION -e GLSLANG_REVISION \
+  -e GLSLANG_VERSION \
   "$BUILD_IMAGE" bash scripts/glslang/validate.sh 2>&1 | tee tmp/validation.log
 (cd dist && sha256sum -c "$PACKAGE.tar.xz.sha256")
 ```
 
 Use a clean checkout/work directory per build. Packaging uses ordinary file timestamps, matching the other SDK workflows.
-Source and toolchain inputs are pinned; archive checksums can differ between builds because file timestamps differ.
+Source is selected by version tag and toolchains by image digest. Archive checksums can differ because timestamps differ.
 Validation uses the extracted archive with toolchain search paths removed, checks its ELF
 runtime dependencies and glibc symbol ceiling, compiles [the requested shader](scripts/glslang/workgroup.comp),
 checks the emitted SPIR-V library structure and export, and compiles an additional shader with a main entry point.

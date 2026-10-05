@@ -27,16 +27,11 @@ fi
     done
     cat ./*.tar.xz.sha256 | LC_ALL=C sort -k2 > SHA256SUMS
 )
-# Save the exact source selection so non-default versions can be reproduced without resolving their tag again.
-{
-    echo "export GLSLANG_VERSION=$GLSLANG_VERSION"
-    echo "export GLSLANG_REVISION=$GLSLANG_REVISION"
-} > dist/glslang-source.env
 mkdir -p tmp
 cat > tmp/release-notes.md <<NOTES
-Pinned glslang ${GLSLANG_VERSION} GLSL compilers for Quadrants' manylinux CI.
+glslang ${GLSLANG_VERSION} GLSL compilers for Quadrants' manylinux CI.
 
-- Source: https://github.com/KhronosGroup/glslang/commit/${GLSLANG_REVISION}
+- Source: https://github.com/KhronosGroup/glslang/tree/${GLSLANG_VERSION}
 - Build recipe: https://github.com/${GITHUB_REPOSITORY}/tree/${GITHUB_SHA}/scripts/glslang
 - Build and validation run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
 - Each archive contains bin/glslang, bin/glslangValidator (symlink), licenses/, and BUILD-INFO.txt
@@ -46,7 +41,7 @@ Pinned glslang ${GLSLANG_VERSION} GLSL compilers for Quadrants' manylinux CI.
 - Both extracted archives passed the exact --no-link -Od Vulkan 1.0 helper compilation in fresh target containers.
 - Validation also checks SPIR-V 1.0, exported helper, WorkgroupId, ELF dependencies and the glibc ceiling.
 - Per-archive SHA-256 files, SHA256SUMS, and full validation logs are attached.
-- glslang-source.env records the exact source selection for reproducing this build.
+- BUILD-INFO.txt in each archive records the exact source commit built.
 
 This workflow never replaces releases or assets. Uploads finish in draft state before publication,
 so repository release immutability can freeze the complete asset set.

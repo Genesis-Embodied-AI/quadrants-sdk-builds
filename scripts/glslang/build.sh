@@ -10,9 +10,8 @@ mkdir -p "$work" /work/dist
 src="$work/source"
 git init "$src"
 git -C "$src" remote add origin https://github.com/KhronosGroup/glslang.git
-git -C "$src" fetch --depth 1 origin "$GLSLANG_REVISION"
+git -C "$src" fetch --depth 1 origin "refs/tags/$GLSLANG_VERSION"
 git -C "$src" checkout --detach FETCH_HEAD
-test "$(git -C "$src" rev-parse HEAD)" = "$GLSLANG_REVISION"
 
 # GLSL-only, with no optimizer: the --no-link -Od helper compilation needs no external source dependencies.
 # Static C++ runtimes avoid dependencies on the manylinux build toolchain at execution time.
@@ -43,7 +42,7 @@ git -C "$src" grep -h -E 'Copyright|copyright' -- '*.cpp' '*.h' '*.y' '*.l' \
     | LC_ALL=C sort -u > "$stage/licenses/glslang-COPYRIGHT-NOTICES.txt"
 {
     echo "glslang_version=$GLSLANG_VERSION"
-    echo "glslang_revision=$GLSLANG_REVISION"
+    echo "glslang_revision=$(git -C "$src" rev-parse HEAD)"
     echo 'source_url=https://github.com/KhronosGroup/glslang'
     echo "sdk_builds_revision=${SDK_BUILDS_REVISION:?}"
     echo "target_image=$TARGET_IMAGE"
