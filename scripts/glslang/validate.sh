@@ -26,7 +26,9 @@ help_status=0
 test "$help_status" -le 1
 grep -F -- '--no-link' "$work/help.txt"
 file "$exe" "$work/$PACKAGE/bin/glslang"
+# Print the ELF header, including architecture, bitness, byte order, and entry point.
 readelf -h "$exe"
+# Print the dynamic section, including required shared libraries and embedded library search paths.
 readelf -d "$exe" | tee "$work/dynamic.txt"
 ldd "$exe" | tee "$work/ldd.txt"
 if grep -F 'not found' "$work/ldd.txt"; then
