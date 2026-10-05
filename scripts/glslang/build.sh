@@ -30,10 +30,16 @@ cmake_args=(
     # Rewrite recorded $work paths to /usr/src/glslang; -ffile-prefix-map already includes the debug-path mapping.
     -DCMAKE_CXX_FLAGS="-ffile-prefix-map=$work=/usr/src/glslang -fdebug-prefix-map=$work=/usr/src/glslang"
     -DCMAKE_EXE_LINKER_FLAGS='-static-libstdc++ -static-libgcc -Wl,--build-id=sha1'
-    -DGLSLANG_TESTS=OFF -DGLSLANG_ENABLE_INSTALL=OFF
-    -DBUILD_EXTERNAL=OFF -DALLOW_EXTERNAL_SPIRV_TOOLS=OFF
-    -DENABLE_OPT=OFF -DENABLE_HLSL=OFF -DENABLE_PCH=OFF
-    -DENABLE_SPIRV=ON -DENABLE_GLSLANG_BINARIES=ON -DENABLE_SPVREMAPPER=OFF
+    -DGLSLANG_TESTS=OFF
+    -DGLSLANG_ENABLE_INSTALL=OFF
+    -DBUILD_EXTERNAL=OFF
+    -DALLOW_EXTERNAL_SPIRV_TOOLS=OFF
+    -DENABLE_OPT=OFF
+    -DENABLE_HLSL=OFF
+    -DENABLE_PCH=OFF
+    -DENABLE_SPIRV=ON
+    -DENABLE_GLSLANG_BINARIES=ON
+    -DENABLE_SPVREMAPPER=OFF
 )
 cmake "${cmake_args[@]}"
 cmake --build "$work/build" --target glslang-standalone --parallel "${BUILD_JOBS:-4}"
