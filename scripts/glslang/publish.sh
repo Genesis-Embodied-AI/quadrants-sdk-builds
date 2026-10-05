@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 source scripts/glslang/pins.sh x86_64
-if [[ "$GITHUB_REF_TYPE" == tag ]]; then
-    tag="$GITHUB_REF_NAME"
-else
-    tag="glslang-${GLSLANG_VERSION}-$(date -u +%Y%m%d%H%M%S)-${GITHUB_RUN_ID}"
-fi
-[[ "$tag" == "glslang-${GLSLANG_VERSION}-"* ]]
+tag="glslang-${GLSLANG_VERSION}-$(date -u +%Y%m%d%H%M%S)-${GITHUB_RUN_ID}"
 # Never update an existing release. A failed draft must be inspected instead of silently overwritten.
 if gh release view "$tag" >/dev/null 2>&1; then
     echo "Release $tag already exists; use a new tag." >&2
@@ -22,6 +17,12 @@ fi
     done
     cat ./*.tar.xz.sha256 | LC_ALL=C sort -k2 > SHA256SUMS
 )
+# Save the exact source selection so non-default versions can be reproduced without resolving their tag again.
+{
+    echo "export GLSLANG_VERSION=$GLSLANG_VERSION"
+    echo "export GLSLANG_REVISION=$GLSLANG_REVISION"
+    echo "export SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
+} > dist/glslang-source.env
 mkdir -p tmp
 cat > tmp/release-notes.md <<NOTES
 Pinned glslang ${GLSLANG_VERSION} GLSL compilers for Quadrants' manylinux CI.
@@ -36,6 +37,7 @@ Pinned glslang ${GLSLANG_VERSION} GLSL compilers for Quadrants' manylinux CI.
 - Both extracted archives passed the exact --no-link -Od Vulkan 1.0 helper compilation in fresh target containers.
 - Validation also checks SPIR-V 1.0, exported helper, WorkgroupId, ELF dependencies and the glibc ceiling.
 - Per-archive SHA-256 files, SHA256SUMS, and full validation logs are attached.
+- glslang-source.env records the exact source selection for reproducing this build.
 
 This workflow never replaces releases or assets. Uploads finish in draft state before publication,
 so repository release immutability can freeze the complete asset set.
@@ -45,7 +47,7 @@ SHA-256:
 $(cat dist/SHA256SUMS)
 \`\`\`
 NOTES
-# Create the tag at the exact build recipe commit for manually dispatched releases too.
+# Create the release tag automatically at the exact build recipe commit.
 gh release create "$tag" --target "$GITHUB_SHA" --draft --title "$tag" --notes-file tmp/release-notes.md
 gh release upload "$tag" dist/*
 # Do not mark this dependency release as the repository's latest LLVM/SDK release.

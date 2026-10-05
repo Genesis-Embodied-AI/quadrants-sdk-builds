@@ -1,22 +1,43 @@
 name: Build glslang (manylinux)
 
 on:
-  push:
-    tags:
-      - 'glslang-15.4.0-*'
   workflow_dispatch:
     inputs:
-      publish:
-        description: 'Publish a new release after both architectures pass validation'
-        type: boolean
-        default: false
+      glslang_version:
+        description: 'glslang release version to build and publish (e.g. 15.4.0)'
+        type: string
+        required: true
+        default: '15.4.0'
 
 permissions:
   contents: read
 
 jobs:
+  source:
+    name: Resolve glslang source
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.source.outputs.version }}
+      revision: ${{ steps.source.outputs.revision }}
+      epoch: ${{ steps.source.outputs.epoch }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Resolve the requested release once for both architectures
+        id: source
+        env:
+          GLSLANG_VERSION: ${{ inputs.glslang_version }}
+        run: bash scripts/glslang/resolve-source.sh
+
   build:
     name: glslang-${{ matrix.arch }}
+    needs: source
+    env:
+      GLSLANG_VERSION: ${{ needs.source.outputs.version }}
+      GLSLANG_REVISION: ${{ needs.source.outputs.revision }}
+      SOURCE_DATE_EPOCH: ${{ needs.source.outputs.epoch }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     strategy:
@@ -43,6 +64,7 @@ jobs:
           docker pull "$BUILD_IMAGE"
           docker run --rm -v "$PWD:/work" -w /work \
             -e SDK_BUILDS_REVISION="$(git rev-parse HEAD)" \
+            -e GLSLANG_VERSION -e GLSLANG_REVISION -e SOURCE_DATE_EPOCH \
             "$BUILD_IMAGE" bash scripts/glslang/build.sh 2>&1 | tee "tmp/build-$ARCH.log"
       - name: Validate the archive in a fresh target container
         env:
@@ -50,6 +72,7 @@ jobs:
         run: |
           source scripts/glslang/pins.sh "$ARCH"
           docker run --rm -v "$PWD:/work" -w /work \
+            -e GLSLANG_VERSION -e GLSLANG_REVISION -e SOURCE_DATE_EPOCH \
             "$BUILD_IMAGE" bash scripts/glslang/validate.sh 2>&1 | tee "dist/$PACKAGE.validation.txt"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -68,8 +91,11 @@ jobs:
 
   release:
     name: Publish validated glslang release
-    needs: build
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    needs: [source, build]
+    env:
+      GLSLANG_VERSION: ${{ needs.source.outputs.version }}
+      GLSLANG_REVISION: ${{ needs.source.outputs.revision }}
+      SOURCE_DATE_EPOCH: ${{ needs.source.outputs.epoch }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:

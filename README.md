@@ -4,16 +4,18 @@ For building SDKs needed by quadrants CI.
 
 ## glslang for manylinux
 
-[Build glslang (manylinux)](.github/workflows/glslang-manylinux.yml) builds **15.4.0** at
+[Build glslang (manylinux)](.github/workflows/glslang-manylinux.yml) defaults to **15.4.0** at
 `8a85691a0740d390761a1008b4696f57facd02c4` on native x86_64 and ARM64 runners. Builds and smoke tests run in
 separate, fresh containers. [pins.sh](scripts/glslang/pins.sh) pins both images by digest, including the GCC,
 CMake, Make, Python and binutils versions; no package installation or external source dependencies are needed.
-The image tags whose digests were resolved are:
+Other requested release versions are resolved once to an exact source commit before either architecture starts.
+Both builds receive that same commit and source timestamp. The default 15.4.0 revision remains fixed even if its
+upstream tag moves. The image tags whose digests were resolved are:
 
 - x86_64: `quay.io/pypa/manylinux_2_28_x86_64:latest`
 - ARM64: `quay.io/pypa/manylinux_2_34_aarch64:2025.11.11-1`
 
-Each `glslang-15.4.0-manylinux_<baseline>_<arch>.tar.xz` contains a same-named root directory with `bin/glslang`,
+Each `glslang-<version>-manylinux_<baseline>_<arch>.tar.xz` contains a same-named root directory with `bin/glslang`,
 `bin/glslangValidator` (a relative symlink), `licenses/`, and `BUILD-INFO.txt`. The latter records source and build
 recipe revisions, the image digest, configuration, compiler version, and installed container RPM versions.
 Only GLSL/SPIR-V compilation is enabled: optional HLSL and the SPIRV-Tools optimizer are disabled. The requested
@@ -22,11 +24,16 @@ libraries are linked statically, with their license notices included; glibc is d
 
 ### Build and publish
 
-To publish, push a new `glslang-15.4.0-<unique-suffix>` tag at the recipe commit, or dispatch the workflow with
-`publish: true` once it is on the default branch. Manual dispatch defaults to validation only. Pull requests do
-not trigger builds, avoiding duplicate builds when updating a PR and pushing a release tag. Each publication
-waits for both architectures and fails if its release already exists. Per-archive SHA-256 files, combined
-`SHA256SUMS`, and validation logs accompany the archives.
+Open **Actions → Build glslang (manylinux) → Run workflow**, enter `glslang_version` (default `15.4.0`), and run it.
+The workflow builds and validates both architectures, then automatically creates the release and attaches the
+downloads. There is no publish checkbox and no need to create a Git tag. Pull requests and tag pushes do not
+trigger builds. GitHub's manual-dispatch UI requires the workflow to be present on the default branch.
+
+The version must name an upstream release in `major.minor.patch` form and be at least 13.1.0 for `--no-link`.
+15.4.0 is the validated default; other versions must pass the same build and validation checks before publication.
+Release tags use `glslang-<version>-<UTC timestamp>-<run ID>`. Each publication waits for both architectures and
+fails if its release already exists. Per-archive SHA-256 files, combined `SHA256SUMS`, validation logs, and
+`glslang-source.env` accompany the archives. The latter records the exact source commit and timestamp.
 
 Publication creates a draft, uploads all assets, then publishes without changing the repository's latest release.
 Keep **Settings → General → Releases → Enable release immutability** enabled. The publisher verifies that GitHub
@@ -36,15 +43,20 @@ publishing. Already published releases are not retroactively frozen. No workflow
 
 ### Reproduce on a native Linux host with Docker
 
-Check out the release tag, then run from the repository root (requires Docker and the matching host architecture):
+Check out the release tag and download its `glslang-source.env` asset to the repository root. Then run from that
+directory (requires Docker and the matching host architecture):
 
 ```bash
+set -euo pipefail
+source glslang-source.env
 source scripts/glslang/pins.sh "$(uname -m)"
 mkdir -p tmp dist
 docker pull "$BUILD_IMAGE"
 docker run --rm -v "$PWD:/work" -w /work -e SDK_BUILDS_REVISION="$(git rev-parse HEAD)" \
+  -e GLSLANG_VERSION -e GLSLANG_REVISION -e SOURCE_DATE_EPOCH \
   "$BUILD_IMAGE" bash scripts/glslang/build.sh 2>&1 | tee tmp/build.log
 docker run --rm -v "$PWD:/work" -w /work \
+  -e GLSLANG_VERSION -e GLSLANG_REVISION -e SOURCE_DATE_EPOCH \
   "$BUILD_IMAGE" bash scripts/glslang/validate.sh 2>&1 | tee tmp/validation.log
 (cd dist && sha256sum -c "$PACKAGE.tar.xz.sha256")
 ```

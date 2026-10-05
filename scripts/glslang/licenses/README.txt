@@ -1,6 +1,6 @@
 The archive contains glslang's unmodified aggregate LICENSE.txt and a collection
 of its source copyright notices. Source: https://github.com/KhronosGroup/glslang
-at revision 8a85691a0740d390761a1008b4696f57facd02c4 (15.4.0).
+at the exact version and revision recorded in the archive's BUILD-INFO.txt.
 
 libstdc++ and libgcc are linked statically from the pinned manylinux toolchain.
 They are covered by GPL version 3 with the GCC Runtime Library Exception 3.1.

@@ -13,7 +13,7 @@ exe="$work/$PACKAGE/bin/glslangValidator"
 test -x "$exe"
 test "$(readlink "$exe")" = glslang
 "$exe" --version | tee "$work/version.txt"
-grep -F '15.4.0' "$work/version.txt"
+grep -E "^Glslang Version: [0-9]+:${GLSLANG_VERSION//./\\.}$" "$work/version.txt"
 # glslang 15.4.0 exits with status 1 after printing help, even for an explicit --help request.
 help_status=0
 "$exe" --help > "$work/help.txt" || help_status=$?
