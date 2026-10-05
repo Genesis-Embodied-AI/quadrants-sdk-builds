@@ -2,6 +2,7 @@
 # Use the packaged glslang compiler to compile tests/workgroup.comp and a generated shader with main().
 # Require both compilations to exit successfully and produce nonempty output files.
 # Also verify the archive checksum, compiler version and --no-link support, runtime libraries, and glibc requirements.
+
 # Run in a fresh target manylinux container, with this repository mounted at /work.
 # Inputs from the workflow: GLSLANG_VERSION, PACKAGE, TARGET_IMAGE, and GLIBC_MAX (the glibc version ceiling).
 # Input files: /work/dist/$PACKAGE.tar.xz and its .sha256 file, both produced by build.sh.
