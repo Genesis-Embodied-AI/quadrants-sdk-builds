@@ -41,4 +41,5 @@ gh release edit "$tag" --draft=false --latest=false
 # Checking the release needs only contents access; reading the repository setting needs an admin token.
 # Verify GitHub reports the published release as immutable; stop the script if it does not.
 test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq .immutable)" = true
+# Print the release URL and attached-file metadata as JSON in the workflow log; do not download or modify anything.
 gh release view "$tag" --json url,assets
