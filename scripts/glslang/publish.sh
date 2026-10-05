@@ -7,6 +7,7 @@ set -euxo pipefail
         PACKAGE=${archive%.tar.xz}
         test -s "$PACKAGE.validation.txt"
         grep -F "PASS: $PACKAGE in " "$PACKAGE.validation.txt"
+        # Verify the archive matches its saved SHA-256 checksum; a mismatch or missing file stops the script.
         sha256sum -c "$PACKAGE.tar.xz.sha256"
     done
     cat ./*.tar.xz.sha256 | LC_ALL=C sort -k2 > SHA256SUMS
